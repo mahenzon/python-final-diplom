@@ -1,20 +1,12 @@
+from celery import Celery
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
-from django.dispatch import receiver, Signal
-from django_rest_passwordreset.signals import reset_password_token_created
 
 from .models import ConfirmEmailToken, User
 
-new_user_registered = Signal(
-    providing_args=['user_id'],
-)
+app = Celery('tasks', broker='pyamqp://guest@localhost//')
 
-new_order = Signal(
-    providing_args=['user_id'],
-)
-
-
-@receiver(reset_password_token_created)
+@app.task
 def password_reset_token_created(sender, instance, reset_password_token, **kwargs):
     """
     Отправляем письмо с токеном для сброса пароля
@@ -39,9 +31,8 @@ def password_reset_token_created(sender, instance, reset_password_token, **kwarg
     )
     msg.send()
 
-
-@receiver(new_user_registered)
-def new_user_registered_signal(user_id, **kwargs):
+@app.task
+def new_user_registered_email(user_id, **kwargs):
     """
     отправляем письмо с подтверждением почты
     """
@@ -61,8 +52,8 @@ def new_user_registered_signal(user_id, **kwargs):
     msg.send()
 
 
-@receiver(new_order)
-def new_order_signal(user_id, **kwargs):
+@app.task
+def new_order_email(user_id, **kwargs):
     """
     отправяем письмо при изменении статуса заказа
     """
