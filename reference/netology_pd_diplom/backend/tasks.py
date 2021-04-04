@@ -1,4 +1,4 @@
-from celery import Celery
+from celery import Celery, shared_task
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 
@@ -6,7 +6,7 @@ from .models import ConfirmEmailToken, User
 
 app = Celery('tasks', broker='pyamqp://guest@localhost//')
 
-@app.task
+@shared_task()
 def password_reset_token_created(sender, instance, reset_password_token, **kwargs):
     """
     Отправляем письмо с токеном для сброса пароля
@@ -31,7 +31,7 @@ def password_reset_token_created(sender, instance, reset_password_token, **kwarg
     )
     msg.send()
 
-@app.task
+@shared_task()
 def new_user_registered_email(user_id, **kwargs):
     """
     отправляем письмо с подтверждением почты
@@ -52,7 +52,7 @@ def new_user_registered_email(user_id, **kwargs):
     msg.send()
 
 
-@app.task
+@shared_task()
 def new_order_email(user_id, **kwargs):
     """
     отправяем письмо при изменении статуса заказа

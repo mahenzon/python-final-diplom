@@ -12,11 +12,12 @@ from rest_framework.authtoken.models import Token
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from ujson import loads as load_json
 from yaml import load as load_yaml, Loader
 
 from .models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Order, OrderItem, \
-    Contact, ConfirmEmailToken
+    Contact, ConfirmEmailToken, User
 from .serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
     OrderItemSerializer, OrderSerializer, ContactSerializer
 from .signals import new_user_registered, new_order
@@ -464,43 +465,58 @@ class ContactView(APIView):
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
 
-class OrderView(APIView):
+
+
+# class OrderView(APIView):
+#     """
+#     Класс для получения и размешения заказов пользователями
+#     """
+#
+#     # получить мои заказы
+#     def get(self, request, *args, **kwargs):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+#         order = Order.objects.filter(
+#             user_id=request.user.id).exclude(state='basket').prefetch_related(
+#             'ordered_items__product_info__product__category',
+#             'ordered_items__product_info__product_parameters__parameter').select_related('contact').annotate(
+#             total_sum=Sum(F('ordered_items__quantity') * F('ordered_items__product_info__price'))).distinct()
+#
+#         serializer = OrderSerializer(order, many=True)
+#         return Response(serializer.data)
+#
+#     # разместить заказ из корзины
+#     def post(self, request, *args, **kwargs):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+#
+#         if {'id', 'contact'}.issubset(request.data):
+#             if request.data['id'].isdigit():
+#                 try:
+#                     is_updated = Order.objects.filter(
+#                         user_id=request.user.id, id=request.data['id']).update(
+#                         contact_id=request.data['contact'],
+#                         state='new')
+#                 except IntegrityError as error:
+#                     print(error)
+#                     return JsonResponse({'Status': False, 'Errors': 'Неправильно указаны аргументы'})
+#                 else:
+#                     if is_updated:
+#                         # new_order.send(sender=self.__class__, user_id=request.user.id)
+#                         new_order_email.delay(sender=self.__class__, user_id=request.user.id)
+#                         return JsonResponse({'Status': True})
+#
+#         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+
+
+class UsersApiListView(ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+class OrderViewSet (ModelViewSet):
     """
-    Класс для получения и размешения заказов пользователями
+       Класс для получения и размещения заказов пользователями
     """
-
-    # получить мои заказы
-    def get(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
-        order = Order.objects.filter(
-            user_id=request.user.id).exclude(state='basket').prefetch_related(
-            'ordered_items__product_info__product__category',
-            'ordered_items__product_info__product_parameters__parameter').select_related('contact').annotate(
-            total_sum=Sum(F('ordered_items__quantity') * F('ordered_items__product_info__price'))).distinct()
-
-        serializer = OrderSerializer(order, many=True)
-        return Response(serializer.data)
-
-    # разместить заказ из корзины
-    def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
-
-        if {'id', 'contact'}.issubset(request.data):
-            if request.data['id'].isdigit():
-                try:
-                    is_updated = Order.objects.filter(
-                        user_id=request.user.id, id=request.data['id']).update(
-                        contact_id=request.data['contact'],
-                        state='new')
-                except IntegrityError as error:
-                    print(error)
-                    return JsonResponse({'Status': False, 'Errors': 'Неправильно указаны аргументы'})
-                else:
-                    if is_updated:
-                        # new_order.send(sender=self.__class__, user_id=request.user.id)
-                        new_order_email.delay(sender=self.__class__, user_id=request.user.id)
-                        return JsonResponse({'Status': True})
-
-        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
