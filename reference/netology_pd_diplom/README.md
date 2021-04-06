@@ -62,4 +62,10 @@
     
     python3 manage.py runserver 0.0.0.0:8000
     
-   
+
+**Запуск Celery worker**
+
+```bash
+cd reference/netology_pd_diplom
+celery -A netology_pd_diplom worker --loglevel=INFO
+```

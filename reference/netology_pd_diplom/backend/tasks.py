@@ -6,6 +6,7 @@ from .models import ConfirmEmailToken, User
 
 app = Celery('tasks', broker='pyamqp://guest@localhost//')
 
+
 @shared_task()
 def password_reset_token_created(sender, instance, reset_password_token, **kwargs):
     """
@@ -30,6 +31,7 @@ def password_reset_token_created(sender, instance, reset_password_token, **kwarg
         [reset_password_token.user.email]
     )
     msg.send()
+
 
 @shared_task()
 def new_user_registered_email(user_id, **kwargs):

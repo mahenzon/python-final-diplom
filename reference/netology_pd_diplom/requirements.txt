@@ -5,3 +5,7 @@ psycopg2-binary
 pyyaml
 ujson
 requests
+celery
+pyamqp
+drf-yasg
+drf-spectacular
